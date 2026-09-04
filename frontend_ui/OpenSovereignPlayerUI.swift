@@ -212,7 +212,7 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         controlBar.addSubview(timeSlider)
         
         // Time / Live Status Label
-        timeLabel = NSTextField(frame: NSRect(x: barW - 438, y: 16, width: 100, height: 20))
+        timeLabel = NSTextField(frame: NSRect(x: barW - 478, y: 16, width: 100, height: 20))
         timeLabel.autoresizingMask = [.minXMargin]
         timeLabel.isEditable = false
         timeLabel.isBordered = false
@@ -223,7 +223,7 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         controlBar.addSubview(timeLabel)
         
         // Volume Button & Slider
-        volumeBtn = NSButton(frame: NSRect(x: barW - 334, y: 12, width: 28, height: 28))
+        volumeBtn = NSButton(frame: NSRect(x: barW - 374, y: 12, width: 28, height: 28))
         volumeBtn.autoresizingMask = [.minXMargin]
         volumeBtn.bezelStyle = .regularSquare
         volumeBtn.isBordered = false
@@ -233,7 +233,7 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         volumeBtn.action = #selector(toggleMute)
         controlBar.addSubview(volumeBtn)
         
-        volumeSlider = NSSlider(frame: NSRect(x: barW - 302, y: 15, width: 65, height: 22))
+        volumeSlider = NSSlider(frame: NSRect(x: barW - 342, y: 15, width: 65, height: 22))
         volumeSlider.autoresizingMask = [.minXMargin]
         volumeSlider.minValue = 0.0
         volumeSlider.maxValue = 1.0
@@ -243,7 +243,7 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         controlBar.addSubview(volumeSlider)
         
         // Speed Selector
-        speedBtn = NSPopUpButton(frame: NSRect(x: barW - 232, y: 12, width: 62, height: 28), pullsDown: false)
+        speedBtn = NSPopUpButton(frame: NSRect(x: barW - 272, y: 12, width: 62, height: 28), pullsDown: false)
         speedBtn.autoresizingMask = [.minXMargin]
         speedBtn.addItems(withTitles: ["0.5x", "1.0x", "1.25x", "1.5x", "2.0x"])
         speedBtn.selectItem(withTitle: "1.0x")
@@ -251,8 +251,20 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         speedBtn.action = #selector(speedChanged(_:))
         controlBar.addSubview(speedBtn)
         
+        // Subtitle Toggle Button (CC)
+        let subtitleBtn = NSButton(frame: NSRect(x: barW - 164, y: 12, width: 32, height: 28))
+        subtitleBtn.autoresizingMask = [.minXMargin]
+        subtitleBtn.bezelStyle = .regularSquare
+        subtitleBtn.isBordered = false
+        subtitleBtn.title = "CC"
+        subtitleBtn.font = NSFont.systemFont(ofSize: 13, weight: .bold)
+        subtitleBtn.toolTip = "Toggle Subtitles (C)"
+        subtitleBtn.target = self
+        subtitleBtn.action = #selector(toggleSubtitles)
+        controlBar.addSubview(subtitleBtn)
+
         // Open Stream URL Button (🌐)
-        streamUrlBtn = NSButton(frame: NSRect(x: barW - 164, y: 12, width: 32, height: 28))
+        streamUrlBtn = NSButton(frame: NSRect(x: barW - 124, y: 12, width: 32, height: 28))
         streamUrlBtn.autoresizingMask = [.minXMargin]
         streamUrlBtn.bezelStyle = .regularSquare
         streamUrlBtn.isBordered = false
@@ -580,6 +592,30 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
             loadMediaSource(url: url)
         }
     }
+    
+    @objc func toggleSubtitles() {
+        Task {
+            guard let item = player?.currentItem else { return }
+            do {
+                if let group = try await item.asset.loadMediaSelectionGroup(for: .legible) {
+                    await MainActor.run {
+                        if item.currentMediaSelection.selectedMediaOption(in: group) != nil {
+                            // Turn off subtitles
+                            item.select(nil, in: group)
+                        } else {
+                            // Turn on default subtitles
+                            let options = AVMediaSelectionGroup.mediaSelectionOptions(from: group.options, with: .current)
+                            if let first = options.first ?? group.options.first {
+                                item.select(first, in: group)
+                            }
+                        }
+                    }
+                }
+            } catch {
+                print("Could not load subtitle tracks: \(error)")
+            }
+        }
+    }
 
     // Auto-Hide Controls on Inactivity
     func showControls(keepVisible: Bool = false) {
@@ -628,6 +664,9 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 return nil
             case 3: // 'F' -> Fullscreen
                 self.toggleFullscreen()
+                return nil
+            case 8: // 'C' -> Subtitles
+                self.toggleSubtitles()
                 return nil
             case 46: // 'M' -> Mute
                 self.toggleMute()

@@ -113,6 +113,11 @@ def bundle_app(universal_bin):
     os.chmod(target_bin, 0o755)
     print(f"  Binary installed to: {target_bin}")
 
+    # Copy Icon
+    icon_src = os.path.join(ROOT, "frontend_ui", "SovereignPlayer.icns")
+    if os.path.exists(icon_src):
+        shutil.copy2(icon_src, os.path.join(resources_dir, "SovereignPlayer.icns"))
+
     # Write Info.plist
     plist_content = '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -120,6 +125,7 @@ def bundle_app(universal_bin):
 <dict>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleExecutable</key><string>SovereignPlayer</string>
+    <key>CFBundleIconFile</key><string>SovereignPlayer.icns</string>
     <key>CFBundleIdentifier</key><string>io.sovereignmediaplayer.SovereignPlayer</string>
     <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
     <key>CFBundleName</key><string>Sovereign Media Player</string>
