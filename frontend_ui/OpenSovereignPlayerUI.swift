@@ -594,25 +594,39 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     
     @objc func toggleSubtitles() {
-        Task {
-            guard let item = player?.currentItem else { return }
-            do {
-                if let group = try await item.asset.loadMediaSelectionGroup(for: .legible) {
-                    await MainActor.run {
-                        if item.currentMediaSelection.selectedMediaOption(in: group) != nil {
-                            // Turn off subtitles
-                            item.select(nil, in: group)
-                        } else {
-                            // Turn on default subtitles
-                            let options = AVMediaSelectionGroup.mediaSelectionOptions(from: group.options, with: .current)
-                            if let first = options.first ?? group.options.first {
-                                item.select(first, in: group)
+        guard let item = player?.currentItem else { return }
+        
+        if #available(macOS 12.0, *) {
+            Task {
+                do {
+                    if let group = try await item.asset.loadMediaSelectionGroup(for: .legible) {
+                        await MainActor.run {
+                            if item.currentMediaSelection.selectedMediaOption(in: group) != nil {
+                                item.select(nil, in: group) // Turn off subtitles
+                            } else {
+                                // Turn on default subtitles
+                                let options = AVMediaSelectionGroup.mediaSelectionOptions(from: group.options, with: .current)
+                                if let first = options.first ?? group.options.first {
+                                    item.select(first, in: group)
+                                }
                             }
                         }
                     }
+                } catch {
+                    print("Could not load subtitle tracks: \(error)")
                 }
-            } catch {
-                print("Could not load subtitle tracks: \(error)")
+            }
+        } else {
+            // Fallback for macOS 10.15 / 11
+            if let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) {
+                if item.currentMediaSelection.selectedMediaOption(in: group) != nil {
+                    item.select(nil, in: group)
+                } else {
+                    let options = AVMediaSelectionGroup.mediaSelectionOptions(from: group.options, with: .current)
+                    if let first = options.first ?? group.options.first {
+                        item.select(first, in: group)
+                    }
+                }
             }
         }
     }
