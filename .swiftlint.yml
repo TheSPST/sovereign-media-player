@@ -1,0 +1,22 @@
+disabled_rules:
+  - trailing_whitespace
+  - line_length
+  - type_body_length
+  - function_body_length
+  - file_length
+
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - fatal_error_message
+  - overridden_super_call
+  - redundant_nil_coalescing
+
+excluded:
+  - build/
+  - dist/
+  - core_engine/
+
+analyzer_rules:
+  - unused_import
+  - unused_declaration

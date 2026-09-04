@@ -25,6 +25,16 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Lint Swift Code
+        run: |
+          brew install swiftlint
+          swiftlint lint --strict
+
+      - name: Lint Python Code
+        run: |
+          pip3 install flake8 --break-system-packages
+          flake8 build_open_core.py
+
       - name: Compile ARM64 Binary
         run: |
           mkdir -p build
