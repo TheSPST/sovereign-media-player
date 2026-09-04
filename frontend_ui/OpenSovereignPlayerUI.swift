@@ -738,7 +738,7 @@ let app = NSApplication.shared
 let delegate = SovereignPlayerApp()
 app.delegate = delegate
 app.run()
-import Cocoa
+
 
 class AppUpdater {
     static let shared = AppUpdater()
