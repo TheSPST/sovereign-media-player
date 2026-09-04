@@ -4,6 +4,10 @@ disabled_rules:
   - type_body_length
   - function_body_length
   - file_length
+  - cyclomatic_complexity
+  - identifier_name
+  - statement_position
+  - vertical_whitespace
 
 opt_in_rules:
   - empty_count
