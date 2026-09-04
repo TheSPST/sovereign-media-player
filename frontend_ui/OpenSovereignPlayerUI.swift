@@ -148,6 +148,9 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         setupTelemetryHUD()
         setupKeyboardShortcuts()
         
+        // 4.5 Check for Updates
+        AppUpdater.shared.checkForUpdates(window: self.window)
+        
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         
@@ -735,3 +738,52 @@ let app = NSApplication.shared
 let delegate = SovereignPlayerApp()
 app.delegate = delegate
 app.run()
+import Cocoa
+
+class AppUpdater {
+    static let shared = AppUpdater()
+    let currentVersion = "v1.1.5"
+    let repoURL = "https://api.github.com/repos/TheSPST/sovereign-media-player/releases/latest"
+
+    func checkForUpdates(window: NSWindow?) {
+        guard let url = URL(string: repoURL) else { return }
+        
+        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+            guard let data = data, error == nil else { return }
+            
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                   let latestVersion = json["tag_name"] as? String,
+                   let htmlUrl = json["html_url"] as? String {
+                    
+                    if latestVersion != self.currentVersion {
+                        DispatchQueue.main.async {
+                            let alert = NSAlert()
+                            alert.messageText = "Update Available"
+                            alert.informativeText = "A new version of Sovereign Media Player (\(latestVersion)) is available. You are currently running \(self.currentVersion)."
+                            alert.alertStyle = .informational
+                            alert.addButton(withTitle: "Download Update")
+                            alert.addButton(withTitle: "Later")
+                            
+                            if let win = window {
+                                alert.beginSheetModal(for: win) { response in
+                                    if response == .alertFirstButtonReturn, let updateURL = URL(string: htmlUrl) {
+                                        NSWorkspace.shared.open(updateURL)
+                                    }
+                                }
+                            } else {
+                                let response = alert.runModal()
+                                if response == .alertFirstButtonReturn, let updateURL = URL(string: htmlUrl) {
+                                    NSWorkspace.shared.open(updateURL)
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch {
+                print("Failed to parse GitHub releases JSON")
+            }
+        }
+        task.resume()
+    }
+}
