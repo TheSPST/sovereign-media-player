@@ -64,8 +64,6 @@ def compile_frontend():
     check_swift()
 
     common_flags = (
-        f"-L {ENGINE_LIB} "
-        f"-lsovereign "
         f"-framework Cocoa "
         f"-framework AVKit "
         f"-framework AVFoundation "

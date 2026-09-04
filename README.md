@@ -137,8 +137,6 @@ We **welcome all community contributions** to the open-source frontend! See [doc
 - Thumbnail scrubbing preview
 - Translations / localization
 
-> **Note:** Contributions to `core_engine/` are not accepted — it is closed-source.
-
 ---
 
 ## License

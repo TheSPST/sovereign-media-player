@@ -24,9 +24,9 @@ jobs:
 
       - name: Compile ARM64 Binary
         run: |
+          mkdir -p build
           swiftc \
             frontend_ui/OpenSovereignPlayerUI.swift \
-            -L core_engine/lib -lsovereign \
             -framework Cocoa -framework AVKit -framework AVFoundation \
             -framework Metal -framework MetalKit \
             -O -whole-module-optimization \
@@ -38,7 +38,6 @@ jobs:
         run: |
           swiftc \
             frontend_ui/OpenSovereignPlayerUI.swift \
-            -L core_engine/lib -lsovereign \
             -framework Cocoa -framework AVKit -framework AVFoundation \
             -framework Metal -framework MetalKit \
             -O -whole-module-optimization \
@@ -50,6 +49,7 @@ jobs:
         run: |
           mkdir -p dist
           lipo -create -output build/SovereignPlayer_universal build/player_arm64 build/player_intel
+          lipo -info build/SovereignPlayer_universal
 
       - name: Strip Debug Symbols
         run: strip -x -ur build/SovereignPlayer_universal
@@ -91,6 +91,8 @@ jobs:
           name: "Sovereign Media Player ${{ github.ref_name }}"
           body: |
             ## Sovereign Media Player ${{ github.ref_name }}
+
+            **Built by Sovereign Byte Technology**
 
             ### Downloads
             - **macOS** (Universal — Apple Silicon M1-M4 + Intel 2010-2020): `SovereignPlayer_macOS_Universal.zip`
