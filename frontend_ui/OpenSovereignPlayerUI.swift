@@ -351,12 +351,17 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
             timeObserverToken = nil
         }
         
-        let asset = AVURLAsset(url: url, options: [
-            "AVURLAssetOutOfBandMIMETypeKey": "application/x-mpegURL",
+        var assetOptions: [String: Any] = [
             "AVURLAssetAllowsCellularAccessKey": true,
             "AVURLAssetPreferPreciseDurationAndTimingKey": true
-        ])
+        ]
         
+        // Only force HLS MIME type for actual HLS streams; otherwise, it breaks local MP4/MKV playback
+        if isHLS {
+            assetOptions["AVURLAssetOutOfBandMIMETypeKey"] = "application/x-mpegURL"
+        }
+        
+        let asset = AVURLAsset(url: url, options: assetOptions)        
         let playerItem = AVPlayerItem(asset: asset)
         playerItem.preferredForwardBufferDuration = 1.0 // Ultra-Low-Latency Pre-Roll Buffer
         player = AVPlayer(playerItem: playerItem)
