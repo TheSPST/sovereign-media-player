@@ -202,7 +202,7 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         controlBar.addSubview(playPauseBtn)
         
         // Time Slider (Scrubber)
-        timeSlider = NSSlider(frame: NSRect(x: 54, y: 14, width: barW - 500, height: 24))
+        timeSlider = NSSlider(frame: NSRect(x: 54, y: 14, width: barW - 544, height: 24))
         timeSlider.autoresizingMask = [.width]
         timeSlider.minValue = 0.0
         timeSlider.maxValue = 1.0
