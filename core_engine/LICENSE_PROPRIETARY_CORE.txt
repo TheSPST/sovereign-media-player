@@ -1,0 +1,32 @@
+SOVEREIGN MEDIA PLAYER ENGINE — PROPRIETARY FREEWARE LICENSE
+================================================================================
+Copyright (c) 2026 Sovereign Byte Technology. All Rights Reserved.
+
+GRANT OF USE:
+Subject to the terms below, you are granted a non-exclusive, non-transferable,
+royalty-free license to download, link against, and distribute the pre-compiled
+binary engine (libsovereign.a / .dylib / .so) for the purpose of building
+media player applications.
+
+RESTRICTIONS:
+  (1) You may NOT decompile, reverse-engineer, disassemble, or use binary
+      analysis tools against this binary.
+  (2) You may NOT sublicense, sell, or redistribute the engine binary as a
+      standalone product.
+  (3) You may NOT remove or alter this license notice.
+
+TERMINATION:
+This license terminates automatically if you breach any of these terms.
+Upon termination, you must immediately cease all use and destroy all copies
+of the binary.
+
+NO WARRANTIES:
+THIS BINARY ENGINE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES, OR OTHER LIABILITY ARISING FROM USE OR INABILITY TO USE THIS
+SOFTWARE.
+
+By downloading or linking against this binary, you agree to these terms.
+================================================================================
