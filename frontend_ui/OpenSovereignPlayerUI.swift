@@ -205,7 +205,18 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
         controlBar.addSubview(playPauseBtn)
         
         // Time Slider (Scrubber)
-        timeSlider = NSSlider(frame: NSRect(x: 54, y: 14, width: barW - 544, height: 24))
+        // Stop Button (VLC style)
+        let stopBtn = NSButton(frame: NSRect(x: 54, y: 10, width: 32, height: 32))
+        stopBtn.bezelStyle = .regularSquare
+        stopBtn.isBordered = false
+        stopBtn.title = "⏹"
+        stopBtn.font = NSFont.systemFont(ofSize: 18, weight: .bold)
+        stopBtn.contentTintColor = .white
+        stopBtn.target = self
+        stopBtn.action = #selector(stopPlayback)
+        controlBar.addSubview(stopBtn)
+
+        timeSlider = NSSlider(frame: NSRect(x: 94, y: 14, width: barW - 584, height: 24))
         timeSlider.autoresizingMask = [.width]
         timeSlider.minValue = 0.0
         timeSlider.maxValue = 1.0
@@ -506,6 +517,15 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
     // ==========================================================================
     // 🎮 ACTIONS & EVENT HANDLERS
     // ==========================================================================
+
+    @objc func stopPlayback() {
+        guard let player = player else { return }
+        player.pause()
+        player.seek(to: CMTime.zero)
+        isPlaying = false
+        playPauseBtn.title = "▶"
+        showControls(keepVisible: true)
+    }
     @objc func togglePlayPause() {
         guard let player = player else { return }
         if isPlaying {
@@ -666,6 +686,9 @@ class SovereignPlayerApp: NSObject, NSApplicationDelegate, NSWindowDelegate {
             switch event.keyCode {
             case 49: // Spacebar -> Play / Pause
                 self.togglePlayPause()
+                return nil
+            case 1: // 'S' -> Stop
+                self.stopPlayback()
                 return nil
             case 123: // Left Arrow -> Seek -5s
                 self.seekOffset(seconds: -5.0)

@@ -153,3 +153,7 @@ We **welcome all community contributions** to the open-source frontend! See [doc
 Designed and engineered by the **Sovereign Byte Technology** team.
 
 [![GitHub](https://img.shields.io/badge/GitHub-Sovereign%20Byte%20Technology-black?style=flat-square&logo=github)](https://github.com/TheSPST)
+
+## Acknowledgements
+
+Special thanks to the [VideoLAN](https://www.videolan.org/) organization and the **VLC Media Player** open-source community. The core UI logic, standard layout features, and keyboard shortcut paradigms used in the `OpenSovereignPlayerUI` frontend were heavily inspired by the VLC macOS client. We are deeply grateful for their pioneering work in open-source media playback!
