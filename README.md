@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Android-blue?style=for-the-badge" />
   <img src="https://img.shields.io/badge/License-MIT%20(Frontend)-green?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Engine-Proprietary%20Freeware-orange?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Status-Open--Core-brightgreen?style=for-the-badge" />
@@ -18,9 +18,9 @@
 | Feature | Status |
 |---|---|
 | 4K / 8K HEVC Playback at 60 FPS | Zero Dropped Frames |
-| Apple Metal Direct GPU Rendering | 0.7% CPU Overhead |
+| Multi-Platform Hardware Acceleration | Metal (macOS) / Direct3D (Windows) / Vulkan/GL (Linux) / MediaCodec (Android) |
 | Live HLS / DASH / RTSP Streaming | 120ms Pre-Roll Buffer |
-| Cross-Platform (macOS, Windows, Linux) | Universal Binary |
+| Cross-Platform Desktop & Mobile | macOS, Windows x64, Linux x86_64, Android NDK |
 | Real-Time Telemetry HUD | FPS / CPU / RAM / Codec |
 | Multi-Format Audio (AAC, MP3, FLAC) | Full Surround |
 | Full Keyboard Shortcut Suite | Power-User Ready |
@@ -32,47 +32,77 @@
 
 ```text
 Sovereign-Media-Player/
-├── core_engine/                        # Pre-compiled closed-source engine
+├── CMakeLists.txt                      # Multi-platform CMake build configuration
+├── core_engine/                        # Sovereign Media Engine core
 │   ├── include/sovereign_engine.h      # Public C-API (open for community)
-│   ├── lib/
-│   │   ├── libsovereign.a              # macOS Universal (arm64 + x86_64)
-│   │   ├── libsovereign_win.lib        # Windows x64
-│   │   └── libsovereign_linux.so       # Linux x86_64 / ARM64
+│   ├── sovereign_engine.cpp            # Hardware context & playback core
 │   └── LICENSE_PROPRIETARY_CORE.txt   # Freeware / No-Decompile license
-├── frontend_ui/                        # 100% Open-Source Swift UI
+├── frontend_ui/                        # 100% Open-Source Swift UI (macOS)
 │   ├── OpenSovereignPlayerUI.swift     # Main macOS GUI (Glassmorphic)
 │   └── LICENSE_OPEN_SOURCE.txt        # MIT License
+├── frontend_crossplatform/             # C++ Cross-Platform Desktop Player
+│   └── sovereign_player_main.cpp       # Windows .exe / Linux ELF HUD player
+├── android/                            # Android NDK Integration
+│   ├── sovereign_android_jni.cpp       # JNI hardware bridge to Surface / ANativeWindow
+│   └── SovereignPlayer.kt              # Kotlin Android wrapper
 ├── docs/
 │   ├── API_REFERENCE.md               # C-API documentation
 │   ├── BUILD.md                        # Build instructions
 │   └── CONTRIBUTING.md                # Community guide
 ├── .github/
 │   └── workflows/
-│       └── build.yml                   # GitHub Actions CI/CD
-├── build_open_core.py                  # Unified build script
+│       └── build.yml                   # Multi-Platform CI/CD (macOS, Win, Linux, Android)
+├── build_open_core.py                  # macOS App Bundler
 └── README.md
 ```
 
-> **How it works:** The `core_engine/` ships as **pre-compiled binaries only** — the Zero-Copy ring buffer, GPU shaders, and hardware decoder are protected intellectual property. The `frontend_ui/` is completely open-source (MIT). Community developers build new UIs, integrations, and ports by linking against the provided header and pre-compiled libraries.
+> **How it works:** The `core_engine/` provides the zero-copy hardware decoding pipeline. The `frontend_ui/` and `frontend_crossplatform/` are completely open-source (MIT). Community developers build new UIs, integrations, and mobile/desktop ports by linking against the provided header and library.
 
 ---
 
 ## Quick Start
 
-### Download & Run (Users)
-```bash
-# No build required!
-# 1. Go to: https://github.com/sovereign-player/sovereign-media-player/releases
-# 2. Download the .zip (macOS)
-# 3. Unzip, drag SovereignPlayer.app to /Applications, and launch!
-```
+### Download Pre-Built Releases
+1. Navigate to: [https://github.com/TheSPST/sovereign-media-player/releases](https://github.com/TheSPST/sovereign-media-player/releases)
+2. Choose your platform:
+   - **macOS**: `SovereignPlayer_macOS_Universal.zip` (Intel + Apple Silicon)
+   - **Windows**: `SovereignPlayer_Windows_x64.zip`
+   - **Linux**: `SovereignPlayer_Linux_x86_64.tar.gz`
+   - **Android**: `SovereignPlayer_Android_NDK.zip`
 
-### Build from Source (Developers)
+### Build from Source
+
+#### 1. macOS Universal App
 ```bash
-git clone https://github.com/sovereign-player/sovereign-media-player.git
+git clone https://github.com/TheSPST/sovereign-media-player.git
 cd sovereign-media-player
 python3 build_open_core.py
 # Output: dist/SovereignPlayer.app
+```
+
+#### 2. Windows x64 (MSVC / CMake)
+```cmd
+cmake -B build_win -S . -DCMAKE_BUILD_TYPE=Release
+cmake --build build_win --config Release
+:: Output: build_win\Release\SovereignPlayer.exe & sovereign_core.dll
+```
+
+#### 3. Linux (Ubuntu / Debian / Fedora)
+```bash
+cmake -B build_linux -S . -DCMAKE_BUILD_TYPE=Release
+cmake --build build_linux -j$(nproc)
+# Output: build_linux/SovereignPlayer & libsovereign_core.so
+```
+
+#### 4. Android (NDK arm64-v8a)
+```bash
+cmake -B build_android \
+  -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=android-21 \
+  -S .
+cmake --build build_android -j$(nproc)
+# Output: build_android/libsovereign_android.so
 ```
 
 ---

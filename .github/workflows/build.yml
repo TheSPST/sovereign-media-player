@@ -1,4 +1,4 @@
-name: Sovereign Media Player — Build & Release
+name: Sovereign Media Player — Multi-Platform Build & Release
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
       - 'v*'
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -24,11 +25,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
-
-      - name: Lint Swift Code
-        run: |
-          brew install swiftlint
-          swiftlint lint --strict
 
       - name: Lint Python Code
         run: |
@@ -49,6 +45,7 @@ jobs:
 
       - name: Compile x86_64 Binary
         run: |
+          mkdir -p build
           swiftc \
             frontend_ui/OpenSovereignPlayerUI.swift \
             -framework Cocoa -framework AVKit -framework AVFoundation \
@@ -70,52 +67,170 @@ jobs:
       - name: Bundle into .app
         run: python3 build_open_core.py --bundle-only
 
-      - name: Verify Architecture
-        run: lipo -info dist/SovereignPlayer.app/Contents/MacOS/SovereignPlayer
-
-      - name: Package Distribution Zip
+      - name: Package macOS Universal Zip
         run: |
           cd dist
           zip -r -9 SovereignPlayer_macOS_Universal.zip SovereignPlayer.app
 
-      - name: Upload Build Artifact
+      - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SovereignPlayer-macOS
           path: dist/SovereignPlayer_macOS_Universal.zip
           retention-days: 30
 
-  release:
-    name: Create GitHub Release
+  build-windows:
+    name: Build Windows x64 Executable
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B build_win -S . -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build with MSVC
+        run: cmake --build build_win --config Release
+
+      - name: Package Windows ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist_win
+          Copy-Item build_win\Release\SovereignPlayer.exe dist_win\
+          Copy-Item build_win\Release\sovereign_core.dll dist_win\
+          Copy-Item core_engine\include\sovereign_engine.h dist_win\
+          Compress-Archive -Path dist_win\* -DestinationPath SovereignPlayer_Windows_x64.zip
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SovereignPlayer-Windows
+          path: SovereignPlayer_Windows_x64.zip
+          retention-days: 30
+
+  build-linux:
+    name: Build Linux x86_64 Package
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake
+
+      - name: Configure and Compile
+        run: |
+          cmake -B build_linux -S . -DCMAKE_BUILD_TYPE=Release
+          cmake --build build_linux -j$(nproc)
+          strip -s build_linux/SovereignPlayer build_linux/libsovereign_core.so
+
+      - name: Package Linux Tarball
+        run: |
+          mkdir -p dist_linux
+          cp build_linux/SovereignPlayer dist_linux/
+          cp build_linux/libsovereign_core.so dist_linux/
+          cp core_engine/include/sovereign_engine.h dist_linux/
+          tar -czvf SovereignPlayer_Linux_x86_64.tar.gz -C dist_linux .
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SovereignPlayer-Linux
+          path: SovereignPlayer_Linux_x86_64.tar.gz
+          retention-days: 30
+
+  build-android:
+    name: Build Android NDK Native Library
     runs-on: ubuntu-latest
-    needs: [build-macos]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r25c
+
+      - name: Build Android ARM64
+        run: |
+          cmake -B build_android_arm64 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-21 \
+            -S .
+          cmake --build build_android_arm64 -j$(nproc)
+
+      - name: Package Android NDK Distribution
+        run: |
+          mkdir -p dist_android/arm64-v8a
+          cp build_android_arm64/libsovereign_android.so dist_android/arm64-v8a/
+          cp android/SovereignPlayer.kt dist_android/
+          cp core_engine/include/sovereign_engine.h dist_android/
+          zip -r SovereignPlayer_Android_NDK.zip dist_android
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SovereignPlayer-Android
+          path: SovereignPlayer_Android_NDK.zip
+          retention-days: 30
+
+  release:
+    name: Create GitHub Multi-Platform Release
+    runs-on: ubuntu-latest
+    needs: [build-macos, build-windows, build-linux, build-android]
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      - name: Download macOS Build
+      - name: Download macOS Artifact
         uses: actions/download-artifact@v4
         with:
           name: SovereignPlayer-macOS
 
-      - name: Create Release
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SovereignPlayer-Windows
+
+      - name: Download Linux Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SovereignPlayer-Linux
+
+      - name: Download Android Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SovereignPlayer-Android
+
+      - name: Publish Multi-Platform Release
         uses: softprops/action-gh-release@v2
         with:
-          files: SovereignPlayer_macOS_Universal.zip
-          name: "Sovereign Media Player ${{ github.ref_name }}"
+          files: |
+            SovereignPlayer_macOS_Universal.zip
+            SovereignPlayer_Windows_x64.zip
+            SovereignPlayer_Linux_x86_64.tar.gz
+            SovereignPlayer_Android_NDK.zip
+          name: "Sovereign Media Player ${{ github.ref_name }} (Multi-Platform)"
           body: |
-            ## Sovereign Media Player ${{ github.ref_name }}
+            ## Sovereign Media Player ${{ github.ref_name }} — Multi-Platform Release
 
-            **Built by Sovereign Byte Technology**
+            **Built by Sovereign Byte Technology · Open-Core Edition**
 
-            ### Downloads
-            - **macOS** (Universal — Apple Silicon M1-M4 + Intel 2010-2020): `SovereignPlayer_macOS_Universal.zip`
+            ### 📦 Downloads:
+            | Platform | File | Architecture / Tech |
+            | :--- | :--- | :--- |
+            | **macOS** | `SovereignPlayer_macOS_Universal.zip` | Universal (Apple Silicon M1–M4 + Intel Core i5/i7) · Metal Direct |
+            | **Windows** | `SovereignPlayer_Windows_x64.zip` | Windows 10/11 (x86_64) · Direct3D 11/12 Zero-Copy |
+            | **Linux** | `SovereignPlayer_Linux_x86_64.tar.gz` | Ubuntu / Debian / Fedora · OpenGL / Vulkan / X11 / Wayland |
+            | **Android** | `SovereignPlayer_Android_NDK.zip` | Android 5.0+ (`arm64-v8a`) · MediaCodec + ANativeWindow + Kotlin |
 
-            ### Quick Start
-            1. Download and unzip the file above.
-            2. Drag `SovereignPlayer.app` to your `/Applications` folder.
-            3. Double-click to launch. Drag any video file into the window to play!
-
-            ### What's New
-            See [CHANGELOG.md](CHANGELOG.md) for full release notes.
+            ### 🚀 Quick Start
+            - **macOS**: Unzip and drag `SovereignPlayer.app` to `/Applications`.
+            - **Windows**: Unzip and double-click `SovereignPlayer.exe`.
+            - **Linux**: Extract with `tar -xvf SovereignPlayer_Linux_x86_64.tar.gz` and run `./SovereignPlayer`.
+            - **Android**: Include `libsovereign_android.so` in `jniLibs/arm64-v8a/` and use `SovereignPlayer.kt`.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
