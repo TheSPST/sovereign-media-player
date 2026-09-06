@@ -163,19 +163,39 @@ jobs:
             -S .
           cmake --build build_android_arm64 -j$(nproc)
 
-      - name: Package Android NDK Distribution
+      - name: Build Android APK and NDK Distribution
         run: |
           mkdir -p dist_android/arm64-v8a
           cp build_android_arm64/libsovereign_android.so dist_android/arm64-v8a/
           cp android/SovereignPlayer.kt dist_android/
+          cp android/src/tech/sovereign/player/SovereignPlayer.java dist_android/
           cp core_engine/include/sovereign_engine.h dist_android/
           zip -r SovereignPlayer_Android_NDK.zip dist_android
+
+          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          PLATFORM_JAR=$(ls -d $ANDROID_HOME/platforms/android-*/android.jar | sort -V | tail -n 1)
+          echo "Using Build Tools: $BUILD_TOOLS"
+          echo "Using Platform JAR: $PLATFORM_JAR"
+
+          mkdir -p android_build/classes
+          javac -cp "$PLATFORM_JAR" -d android_build/classes android/src/tech/sovereign/player/*.java
+          $BUILD_TOOLS/d8 --lib "$PLATFORM_JAR" --output android_build/ android_build/classes/tech/sovereign/player/*.class
+          $BUILD_TOOLS/aapt package -F android_build/unaligned.apk -M android/AndroidManifest.xml -I "$PLATFORM_JAR"
+          (cd android_build && zip -u unaligned.apk classes.dex)
+          mkdir -p android_build/lib/arm64-v8a
+          cp build_android_arm64/libsovereign_android.so android_build/lib/arm64-v8a/
+          (cd android_build && zip -u -r unaligned.apk lib/)
+          $BUILD_TOOLS/zipalign -v -p 4 android_build/unaligned.apk SovereignPlayer_Android.apk
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=AndroidDebug,O=Android,C=US"
+          $BUILD_TOOLS/apksigner sign --ks debug.keystore --ks-pass pass:android --ks-key-alias androiddebugkey --key-pass pass:android SovereignPlayer_Android.apk
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SovereignPlayer-Android
-          path: SovereignPlayer_Android_NDK.zip
+          path: |
+            SovereignPlayer_Android_NDK.zip
+            SovereignPlayer_Android.apk
           retention-days: 30
 
   release:
@@ -213,24 +233,31 @@ jobs:
             SovereignPlayer_Windows_x64.zip
             SovereignPlayer_Linux_x86_64.tar.gz
             SovereignPlayer_Android_NDK.zip
-          name: "Sovereign Media Player ${{ github.ref_name }} (Multi-Platform)"
+            SovereignPlayer_Android.apk
+          name: "Sovereign Baseline Media Player ${{ github.ref_name }} (Open-Core Multi-Platform)"
           body: |
-            ## Sovereign Media Player ${{ github.ref_name }} — Multi-Platform Release
+            ## Sovereign Media Player ${{ github.ref_name }} — Baseline Open-Core Release
+
+            > **⚠️ Note:** This release contains the **Baseline Video Player only (main branch)**.
+            > All V3 Advanced Multitrack Studio timeline and editor code is strictly housed in a separate private repository.
 
             **Built by Sovereign Byte Technology · Open-Core Edition**
 
-            ### 📦 Downloads:
-            | Platform | File | Architecture / Tech |
+            ### 📦 Multi-Platform Downloads:
+            | Platform | File | Description / Technology |
             | :--- | :--- | :--- |
-            | **macOS** | `SovereignPlayer_macOS_Universal.zip` | Universal (Apple Silicon M1–M4 + Intel Core i5/i7) · Metal Direct |
-            | **Windows** | `SovereignPlayer_Windows_x64.zip` | Windows 10/11 (x86_64) · Direct3D 11/12 Zero-Copy |
-            | **Linux** | `SovereignPlayer_Linux_x86_64.tar.gz` | Ubuntu / Debian / Fedora · OpenGL / Vulkan / X11 / Wayland |
-            | **Android** | `SovereignPlayer_Android_NDK.zip` | Android 5.0+ (`arm64-v8a`) · MediaCodec + ANativeWindow + Kotlin |
+            | **macOS** | `SovereignPlayer_macOS_Universal.zip` | Universal App (Apple Silicon M1–M4 + Intel Core i5/i7) · Metal Direct |
+            | **Windows** | `SovereignPlayer_Windows_x64.zip` | Windows 10/11 (`x86_64`) · Direct3D 11/12 Zero-Copy EXE + DLL |
+            | **Linux** | `SovereignPlayer_Linux_x86_64.tar.gz` | Ubuntu / Debian / Fedora (`x86_64`) · Vulkan / OpenGL / X11 |
+            | **Android (APK)** | `SovereignPlayer_Android.apk` | Standalone Installable APK (Android 5.0+) |
+            | **Android (NDK)** | `SovereignPlayer_Android_NDK.zip` | NDK Native Library (`arm64-v8a`) + Kotlin/Java SDK |
 
             ### 🚀 Quick Start
             - **macOS**: Unzip and drag `SovereignPlayer.app` to `/Applications`.
-            - **Windows**: Unzip and double-click `SovereignPlayer.exe`.
+            - **Windows**: Unzip and run `SovereignPlayer.exe`.
             - **Linux**: Extract with `tar -xvf SovereignPlayer_Linux_x86_64.tar.gz` and run `./SovereignPlayer`.
-            - **Android**: Include `libsovereign_android.so` in `jniLibs/arm64-v8a/` and use `SovereignPlayer.kt`.
+            - **Android (Direct)**: Download and install `SovereignPlayer_Android.apk`.
+            - **Android (NDK/SDK)**: Extract `SovereignPlayer_Android_NDK.zip` to embed `libsovereign_android.so` in your app.
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

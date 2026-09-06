@@ -24,7 +24,7 @@ extern "C" {
 
 /**
  * ==============================================================================
- * Sovereign Media Engine — Public C-API (v3.0.0)
+ * Sovereign Media Engine — Public C-API (v2.0.0)
  * Copyright (c) 2026 Sovereign Byte Technology. All Rights Reserved.
  *
  * This header and its accompanying pre-compiled binary (libsovereign.a /
