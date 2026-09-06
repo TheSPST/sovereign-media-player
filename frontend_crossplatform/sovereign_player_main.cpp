@@ -18,6 +18,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cstring>
+#include <atomic>
 #include <csignal>
 
 #if defined(_WIN32)
