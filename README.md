@@ -99,7 +99,7 @@ cmake --build build_linux -j$(nproc)
 cmake -B build_android \
   -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
   -DANDROID_ABI=arm64-v8a \
-  -DANDROID_PLATFORM=android-21 \
+  -DANDROID_PLATFORM=android-29 \
   -S .
 cmake --build build_android -j$(nproc)
 # Output: build_android/libsovereign_android.so

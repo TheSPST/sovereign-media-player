@@ -178,7 +178,7 @@ jobs:
           cmake -B build_android_arm64 \
             -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=arm64-v8a \
-            -DANDROID_PLATFORM=android-21 \
+            -DANDROID_PLATFORM=android-29 \
             -S .
           cmake --build build_android_arm64 -j$(nproc)
 
@@ -276,7 +276,7 @@ jobs:
             | **macOS** | `SovereignPlayer_macOS_Universal.zip` | Universal App (Apple Silicon M1–M4 + Intel Core i5/i7) · Metal Direct |
             | **Windows** | `SovereignPlayer_Windows_x64.zip` | Windows 10/11 (`x86_64`) · Standalone Zero-Dependency EXE + C/C++ SDK |
             | **Linux** | `SovereignPlayer_Linux_x86_64.tar.gz` | Ubuntu / Debian / Fedora (`x86_64`) · Vulkan / OpenGL / X11 |
-            | **Android (APK)** | `SovereignPlayer_Android.apk` | Standalone Installable APK (Android 5.0+) |
+            | **Android (APK)** | `SovereignPlayer_Android.apk` | Standalone Installable APK (Android 10.0+ / API 29+) |
             | **Android (NDK)** | `SovereignPlayer_Android_NDK.zip` | NDK Native Library (`arm64-v8a`) + Kotlin/Java SDK |
 
             ### 🚀 Quick Start

@@ -24,6 +24,9 @@ include_directories(
 # 1. Core Libraries (Both Shared for Developers and Static for Standalone)
 # ------------------------------------------------------------------------------
 if(ANDROID)
+    if(NOT DEFINED ANDROID_PLATFORM)
+        set(ANDROID_PLATFORM android-29)
+    endif()
     add_library(sovereign_android SHARED
         core_engine/sovereign_engine.cpp
         android/sovereign_android_jni.cpp
